@@ -59,10 +59,7 @@ sql_statements = [
     );"""
 ]
 
-if os.getenv("ENV") == "dev":
-    database = 'data/dev.db'
-else:
-    database = 'data/ranking.db'
+database = "data/" + os.getenv("DB") + ".db"
 
 with sqlite3.connect(database) as conn:
     cursor = conn.cursor()
