@@ -56,7 +56,7 @@ sql_statements = [
     );"""
 ]
 
-with sqlite3.connect('ranking.db') as conn:
+with sqlite3.connect('data/ranking.db') as conn:
     cursor = conn.cursor()
     for statement in sql_statements:
         cursor.execute(statement)
