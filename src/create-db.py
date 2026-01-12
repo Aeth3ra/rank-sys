@@ -1,4 +1,7 @@
-import sqlite3
+import sqlite3, os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 sql_statements = [
     """--sql
@@ -56,7 +59,12 @@ sql_statements = [
     );"""
 ]
 
-with sqlite3.connect('data/ranking.db') as conn:
+if os.getenv("ENV") == "dev":
+    database = 'data/dev.db'
+else:
+    database = 'data/ranking.db'
+
+with sqlite3.connect(database) as conn:
     cursor = conn.cursor()
     for statement in sql_statements:
         cursor.execute(statement)
