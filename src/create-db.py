@@ -6,27 +6,27 @@ load_dotenv()
 sql_statements = [
     """--sql
     CREATE TABLE IF NOT EXISTS games (
-        game_name   TEXT PRIMARY KEY
+        game_name   TEXT COLLATE NOCASE PRIMARY KEY
     );""",
 
     """--sql
     CREATE TABLE IF NOT EXISTS seasons (
         season_id   INTEGER PRIMARY KEY,
         season_num  INTEGER NOT NULL,
-        game_name   TEXT NOT NULL,
+        game_name   TEXT COLLATE NOCASE NOT NULL,
         UNIQUE (season_num, game_name),
         FOREIGN KEY (game_name) REFERENCES games (game_name)
     );""",
 
     """--sql
     CREATE TABLE IF NOT EXISTS players (
-        player_name TEXT PRIMARY KEY
+        player_name TEXT COLLATE NOCASE PRIMARY KEY
     );""",
 
     """--sql
     CREATE TABLE IF NOT EXISTS ratings (
         rating_id   INTEGER PRIMARY KEY,
-        player_name TEXT NOT NULL,
+        player_name TEXT COLLATE NOCASE NOT NULL,
         season_id   INTEGER NOT NULL,
         mu          REAL NOT NULL,
         sigma       REAL NOT NULL,

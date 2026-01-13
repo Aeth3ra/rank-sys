@@ -27,11 +27,6 @@ def addGame(conn: sqlite3.Connection, game: str):
 
 def addSeason(conn: sqlite3.Connection, game: str, num: int):
     cursor = conn.cursor()
-    
-    # Check that game exists in database
-    # cursor.execute("SELECT * FROM games WHERE game_name = ?", (game,))
-    # if cursor.fetchone() is None:
-    #     raise ValueError
 
     try:
         cursor.execute("INSERT INTO seasons (season_num, game_name) VALUES (?, ?)",
@@ -43,10 +38,14 @@ def addSeason(conn: sqlite3.Connection, game: str, num: int):
 def getSeasonId(conn: sqlite3.Connection, game: str, num: int) -> int:
     sql = """--sql
         SELECT season_id FROM seasons 
-        WHERE upper(game_name) = upper(?) 
+        WHERE game_name = ?
         AND season_num = ?;"""
     cursor = conn.execute(sql, (game, num))
-    return cursor.fetchone()[0]
+    row = cursor.fetchone()
+
+    if row is None:
+        raise ValueError(f"No season found for {game} Season {num}")
+    return row[0]
 
 def addPlayer(conn: sqlite3.Connection, player: str):
     conn.execute("INSERT OR IGNORE INTO players VALUES (?)", (player,))
@@ -62,10 +61,14 @@ def newRating(conn: sqlite3.Connection, season_id: int, player: str, config: Con
 def getRatingId(conn: sqlite3.Connection, player: str, season_id: int) -> int:
     sql = """--sql
         SELECT rating_id FROM ratings
-        WHERE upper(player_name) = upper(?)
+        WHERE player_name = ?
         AND season_id = ?;"""
     cursor = conn.execute(sql, (player, season_id))
-    return cursor.fetchone()[0]
+    row = cursor.fetchone()
+
+    if row is None:
+        raise ValueError(f"No rating found for {player} in season with id {season_id}")
+    return row[0]
 
 def getTeamRatingIds(conn: sqlite3.Connection, team: list[str], season_id) -> list[int]:
     placeholders = ', '.join(['?'] * len(team))
@@ -79,7 +82,7 @@ def updateRating(conn: sqlite3.Connection, rating_id: int, mu: float, sigma: flo
     sql = "UPDATE ratings SET mu = ?, sigma = ? WHERE rating_id = ?"
     conn.execute(sql, (mu, sigma, rating_id))
 
-def addMatch(conn: sqlite3.Connection, season_id: int, match_time: int) -> int:
+def addMatch(conn: sqlite3.Connection, season_id: int, match_time: datetime) -> int:
     sql = "INSERT INTO matches (season_id, match_time) VALUES (?, ?) RETURNING match_id"
     cursor = conn.execute(sql, (season_id, match_time))
     return cursor.fetchone()[0]
@@ -116,17 +119,3 @@ def recordMatch(conn: sqlite3.Connection, game_name: str, season_num: int,
     for team_ratings, team_id in zip(teams_rating_ids, team_ids):
         for rating_id in team_ratings:
             addParticipation(conn, team_id, rating_id)
-
-def updateRatings(conn: sqlite3.Connection, season_id: int,
-                  new_ratings: list[tuple[str, float, float]]):
-    """
-    Update the ratings of a list of players.
-    
-    :param conn: an sqlite3 conection object to the database
-    :param season_id: id of the season the ratings below to
-    :param new_ratings: list of tuples, where each tuple consists 
-        of (player_name, mu, sigma)
-    """
-    for player_name, mu, sigma in new_ratings:
-        rating_id = getRatingId(conn, player_name, season_id)
-        updateRating(conn, rating_id, mu, sigma)
