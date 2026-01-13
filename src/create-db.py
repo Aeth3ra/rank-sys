@@ -39,7 +39,7 @@ sql_statements = [
     CREATE TABLE IF NOT EXISTS matches (
         match_id    INTEGER PRIMARY KEY,
         season_id   INTEGER NOT NULL,
-        timestamp   INTEGER NOT NULL,
+        match_time  TIMESTAMP NOT NULL,
         FOREIGN KEY (season_id) REFERENCES seasons (season_id)
     );""",
 
