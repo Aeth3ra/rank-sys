@@ -1,14 +1,6 @@
 from openskill.models import PlackettLuce, PlackettLuceRating
 from database import *
-from dotenv import load_dotenv
-import sqlite3, os
-load_dotenv()
 
-def getConnection() -> sqlite3.Connection:
-    database = "data/" + os.getenv("DB") + ".db"
-    conn = sqlite3.connect(database)
-    conn.execute("PRAGMA foreign_keys = ON;")
-    return conn
 
 def getMmr(player: PlackettLuceRating):
     return player.ordinal(alpha=25, target=100)
@@ -28,5 +20,7 @@ def parseMatchInput():
 
 
 with getConnection() as conn:
-    addSeason("Minecraft", 1, conn)
+    season_id = getSeasonId(conn, "Lockout", 1)
+    rating_id = getRatingId(conn, "Aethera", season_id)
+    updateRating(conn, rating_id, 26, 8.1)
     # cursor.execute("DELETE FROM seasons WHERE season_id = 2")
