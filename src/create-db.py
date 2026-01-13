@@ -7,12 +7,13 @@ sql_statements = [
     """--sql
     CREATE TABLE IF NOT EXISTS games (
         game_name   TEXT COLLATE NOCASE PRIMARY KEY
+            CHECK (length(trim(game_name)) > 0)
     );""",
 
     """--sql
     CREATE TABLE IF NOT EXISTS seasons (
         season_id   INTEGER PRIMARY KEY,
-        season_num  INTEGER NOT NULL,
+        season_num  INTEGER NOT NULL CHECK (season_num > 0),
         game_name   TEXT COLLATE NOCASE NOT NULL,
         UNIQUE (season_num, game_name),
         FOREIGN KEY (game_name) REFERENCES games (game_name)
@@ -21,6 +22,7 @@ sql_statements = [
     """--sql
     CREATE TABLE IF NOT EXISTS players (
         player_name TEXT COLLATE NOCASE PRIMARY KEY
+            CHECK (length(trim(player_name)) > 0)
     );""",
 
     """--sql
@@ -29,7 +31,7 @@ sql_statements = [
         player_name TEXT COLLATE NOCASE NOT NULL,
         season_id   INTEGER NOT NULL,
         mu          REAL NOT NULL,
-        sigma       REAL NOT NULL,
+        sigma       REAL NOT NULL CHECK (sigma > 0),
         FOREIGN KEY (player_name) REFERENCES players (player_name),
         FOREIGN KEY (season_id) REFERENCES seasons (season_id),
         UNIQUE (player_name, season_id)
@@ -39,7 +41,7 @@ sql_statements = [
     CREATE TABLE IF NOT EXISTS matches (
         match_id    INTEGER PRIMARY KEY,
         season_id   INTEGER NOT NULL,
-        match_time  TIMESTAMP NOT NULL,
+        match_time  TIMESTAMP NOT NULL CHECK (match_time > 0),
         FOREIGN KEY (season_id) REFERENCES seasons (season_id)
     );""",
 
@@ -47,7 +49,7 @@ sql_statements = [
     CREATE TABLE IF NOT EXISTS teams (
         team_id     INTEGER PRIMARY KEY,
         match_id    INTEGER NOT NULL,
-        score       INTEGER NOT NULL,
+        score       INTEGER NOT NULL CHECK (score >= 0),
         FOREIGN KEY (match_id) REFERENCES matches (match_id)
     );""",
 
@@ -55,7 +57,9 @@ sql_statements = [
     CREATE TABLE IF NOT EXISTS participations (
         team_id     INTEGER NOT NULL,
         rating_id   INTEGER NOT NULL,
-        PRIMARY KEY (team_id, rating_id)
+        PRIMARY KEY (team_id, rating_id),
+        FOREIGN KEY (team_id) REFERENCES teams (team_id),
+        FOREIGN KEY (rating_id) REFERENCES ratings (rating_id)
     );"""
 ]
 
