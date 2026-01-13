@@ -67,6 +67,14 @@ def getRatingId(conn: sqlite3.Connection, player: str, season_id: int) -> int:
     cursor = conn.execute(sql, (player, season_id))
     return cursor.fetchone()[0]
 
+def getTeamRatingIds(conn: sqlite3.Connection, team: list[str], season_id) -> list[int]:
+    placeholders = ', '.join(['?'] * len(team))
+    sql = f"""--sql
+        SELECT rating_id FROM ratings
+        WHERE season_id = ? AND player_name in ({placeholders});"""
+    cursor = conn.execute(sql, (season_id, *team))
+    return [row[0] for row in cursor.fetchall()]
+
 def updateRating(conn: sqlite3.Connection, rating_id: int, mu: float, sigma: float):
     sql = "UPDATE ratings SET mu = ?, sigma = ? WHERE rating_id = ?"
     conn.execute(sql, (mu, sigma, rating_id))
@@ -87,8 +95,8 @@ def addParticipation(conn: sqlite3.Connection, team_id: int, rating_id: int):
     except sqlite3.IntegrityError:
         print(f"Error adding participation of rating_id {rating_id} to team with id {team_id}!")
 
-def recordMatch(conn: sqlite3.Connection, season_id: int, teams: list[list[int]],
-                scores: list[int], match_time: float):
+def recordMatch(conn: sqlite3.Connection, game_name: str, season_num: int, 
+                teams: list[list[str]], scores: list[int], match_time: datetime):
     """
     Record a match in the database, adding rows to the matches, 
     teams and participations tables.
@@ -99,4 +107,26 @@ def recordMatch(conn: sqlite3.Connection, season_id: int, teams: list[list[int]]
     :param scores: list of scores for each team, must be same length as `teams`
     :param timestamp: unix epoch time of match
     """
+    season_id = getSeasonId(conn, game_name, season_num)
+    teams_rating_ids = [getTeamRatingIds(conn, team, season_id) for team in teams]
+
+    match_id = addMatch(conn, season_id, match_time)
+    team_ids = [addTeam(conn, match_id, score) for score in scores]
+
+    for team_ratings, team_id in zip(teams_rating_ids, team_ids):
+        for rating_id in team_ratings:
+            addParticipation(conn, team_id, rating_id)
+
+def updateRatings(conn: sqlite3.Connection, season_id: int,
+                  new_ratings: list[tuple[str, float, float]]):
+    """
+    Update the ratings of a list of players.
     
+    :param conn: an sqlite3 conection object to the database
+    :param season_id: id of the season the ratings below to
+    :param new_ratings: list of tuples, where each tuple consists 
+        of (player_name, mu, sigma)
+    """
+    for player_name, mu, sigma in new_ratings:
+        rating_id = getRatingId(conn, player_name, season_id)
+        updateRating(conn, rating_id, mu, sigma)
